@@ -50,7 +50,7 @@
     to wrap
 
 .NOTES
-    Version: 0.0.12
+    Version: 0.0.13
 #>
 function Wrap-String {
     [CmdletBinding()]
@@ -82,7 +82,7 @@ function Wrap-String {
     )
 
     begin {
-        $Version = '0.0.12'
+        $Version = '0.0.13'
         if ($ShowVersion) {
             Write-Output "Wrap-String Version: $Version"
             return
@@ -134,7 +134,6 @@ function Wrap-String {
     }
 
     process {
-        # Tokenization: split into tokens by $WordDelimiter, including the first capture group if present.
         $tokens = @()
         $inputStr = $String
         $pattern = $WordDelimiter
@@ -145,6 +144,7 @@ function Wrap-String {
             $length = $match.Length
             $fragment = $inputStr.Substring($lastIndex, $start - $lastIndex)
             if ($fragment -ne "") { $tokens += $fragment }
+            # Only add capture group if present and successful
             if ($match.Groups.Count -gt 1 -and $match.Groups[1].Success) {
                 $tokens += $match.Groups[1].Value
             }
@@ -155,27 +155,31 @@ function Wrap-String {
             $tokens += $inputStr.Substring($lastIndex)
         }
 
-        # Build output lines, wrapping greedily up to $Length
+        # Re-join tokens where splitting would break a word (for whitespace delimiters)
+        # Instead, split into "words" and build up lines
         $lines = @()
         $line = ""
         foreach ($token in $tokens) {
-            if ($line.Length -eq 0) {
+            if ($line -eq "") {
                 $line = $token
             }
-            elseif (($line.Length + $token.Length) -le $Length) {
-                $line += $token
+            elseif (($line.Length + 1 + $token.Length) -le $Length) {
+                # Add with a space or delimiter if necessary
+                if ($line[-1] -match '[^\s\.\-]$' -and $token -notmatch '^[\.\-\s]') {
+                    $line += " " + $token
+                } else {
+                    $line += $token
+                }
             }
             else {
                 $lines += $line
                 $line = $token
             }
         }
-        if ($line.Length -gt 0) {
+        if ($line -ne "") {
             $lines += $line
         }
-
-        $result = $lines
-        $result_str = ($result -join $LineSeparator);
+        $result_str = ($lines -join $LineSeparator)
         return $result_str
     }
 }
