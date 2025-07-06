@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     The Wrap-String function breaks a string into multiple lines, ensuring each line does not exceed the specified length.
-    It splits the input string at points matching the provided WordDelimiter regular expression, preserving the first capture group if present, or a single space for whitespace delimiters, only at line breaks.
+    It splits the input string at points matching the provided WordDelimiter regular expression, preserving the first capture group (if present) at the split points.
     Lines are joined using the specified LineSeparator, and the function ensures that no line exceeds the specified length (unless that line consists of a single word that is longer than the specified length), accounting for the separator's length.
     The function supports pipeline input for the String parameter.
 
@@ -20,7 +20,8 @@
     Alias: Separator
 
 .PARAMETER WordDelimiter
-    A regular expression defining where the string can be split. The matching characters are discarded, except for the first capture group (if it exists), or a single space for whitespace delimiters, used only at line breaks. Defaults to '(?:(-)|\s)\s*', i.e., a hyphen (retained) or whitespace (replaced with a single space), followed by any additional whitespace (discarded).
+    A regular expression defining where the string can be split. The matching characters are discarded, except for the first capture group (if it exists), used only at line breaks.
+    Defaults to '(?:(-)|\s)\s*', i.e., a hyphen (retained) or whitespace (replaced with a single space), followed by any additional whitespace (discarded).
     Aliases: D, Delimiter
 
 .PARAMETER Help
@@ -134,7 +135,46 @@ function Wrap-String {
     }
 
     process {
-        # TODO
+        $tokens = @()
+        $pattern = $WordDelimiter
+        $inputStr = $String
+
+        # Build tokens preserving first capture group
+        $lastIndex = 0
+        $matches = [regex]::Matches($inputStr, $pattern)
+        foreach ($match in $matches) {
+            $start = $match.Index
+            $length = $match.Length
+            $fragment = $inputStr.Substring($lastIndex, $start - $lastIndex)
+            if ($fragment -ne "") { $tokens += $fragment }
+            if ($match.Groups.Count -gt 1 -and $match.Groups[1].Value -ne "") {
+                $tokens += $match.Groups[1].Value
+            }
+            $lastIndex = $start + $length
+        }
+        # Add the trailing fragment
+        if ($lastIndex -lt $inputStr.Length) {
+            $tokens += $inputStr.Substring($lastIndex)
+        }
+
+        # Now wrap into lines
+        $lines = @()
+        $line = ""
+        foreach ($token in $tokens) {
+            if ($line.Length -eq 0) {
+                $line = $token
+            } elseif (($line.Length + $token.Length) -le $Length) {
+                $line += $token
+            } else {
+                $lines += $line
+                $line = $token
+            }
+        }
+        if ($line.Length -gt 0) {
+            $lines += $line
+        }
+
+        $result = $lines
         $result_str = ($result -join $LineSeparator);
         return $result_str
     }
