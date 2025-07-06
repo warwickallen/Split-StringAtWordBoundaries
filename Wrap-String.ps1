@@ -50,7 +50,7 @@
     to wrap
 
 .NOTES
-    Version: 0.0.11
+    Version: 0.0.12
 #>
 function Wrap-String {
     [CmdletBinding()]
@@ -82,7 +82,7 @@ function Wrap-String {
     )
 
     begin {
-        $Version = '0.0.11'
+        $Version = '0.0.12'
         if ($ShowVersion) {
             Write-Output "Wrap-String Version: $Version"
             return
