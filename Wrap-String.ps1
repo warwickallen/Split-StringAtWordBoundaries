@@ -134,11 +134,10 @@ function Wrap-String {
     }
 
     process {
+        # Tokenization: split into tokens by $WordDelimiter, including the first capture group if present.
         $tokens = @()
-        $pattern = $WordDelimiter
         $inputStr = $String
-
-        # Build tokens preserving first capture group
+        $pattern = $WordDelimiter
         $lastIndex = 0
         $matches = [regex]::Matches($inputStr, $pattern)
         foreach ($match in $matches) {
@@ -146,25 +145,27 @@ function Wrap-String {
             $length = $match.Length
             $fragment = $inputStr.Substring($lastIndex, $start - $lastIndex)
             if ($fragment -ne "") { $tokens += $fragment }
-            if ($match.Groups.Count -gt 1 -and $match.Groups[1].Value -ne "") {
+            if ($match.Groups.Count -gt 1 -and $match.Groups[1].Success) {
                 $tokens += $match.Groups[1].Value
             }
             $lastIndex = $start + $length
         }
-        # Add the trailing fragment
+        # Add trailing fragment
         if ($lastIndex -lt $inputStr.Length) {
             $tokens += $inputStr.Substring($lastIndex)
         }
 
-        # Now wrap into lines
+        # Build output lines, wrapping greedily up to $Length
         $lines = @()
         $line = ""
         foreach ($token in $tokens) {
             if ($line.Length -eq 0) {
                 $line = $token
-            } elseif (($line.Length + $token.Length) -le $Length) {
+            }
+            elseif (($line.Length + $token.Length) -le $Length) {
                 $line += $token
-            } else {
+            }
+            else {
                 $lines += $line
                 $line = $token
             }
