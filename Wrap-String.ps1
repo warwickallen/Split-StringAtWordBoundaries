@@ -50,7 +50,7 @@
     to wrap
 
 .NOTES
-    Version: 0.0.13
+    Version: 0.0.26
 #>
 function Wrap-String {
     [CmdletBinding()]
@@ -59,30 +59,25 @@ function Wrap-String {
         [string]$String,
 
         [Alias("N")]
-        [Parameter()]
         [int]$Length = 80,
 
         [Alias("Separator")]
-        [Parameter()]
         [string]$LineSeparator = [char]10,
 
         [Alias("D","Delimiter")]
-        [Parameter()]
         [string]$WordDelimiter = '(?:(-)|\s)\s*',
 
-        [Parameter()]
         [switch]$Help,
-
-        [Parameter()]
+        
         [switch]$Test,
-
+        
         [Alias("Version")]
-        [Parameter()]
         [switch]$ShowVersion
     )
 
     begin {
-        $Version = '0.0.13'
+        $Version = '0.0.26'
+
         if ($ShowVersion) {
             Write-Output "Wrap-String Version: $Version"
             return
@@ -93,93 +88,67 @@ function Wrap-String {
         }
         if ($Test) {
             Write-Host "Wrap-String Version: $Version"
-            Write-Host "Running Wrap-String test cases..."
-            Write-Host ""
-
-            $test_number = 0
-
-            (
-                @{ params = "-String 'aaa.bbb...ccc.ddd.eee.fff' -Length 12 -WordDelimiter '(`.)`.*'"
-                   expected = "aaa.bbb.`nccc.ddd.eee.`nfff" },
-                @{ params = "-String 'This is a long sentence to wrap' -Length 10"
-                   expected = "This is a`nlong`nsentence`nto wrap" },
-                @{ params = "-String 'aaa.bbb...cccc.ddd.eee.fff.hhh.iii' -Length 12 -WordDelimiter '(`.)`.*' -LineSeparator ([char]10 + '123')"
-                   expected = "aaa.bbb.`n123cccc.ddd.`n123eee.fff.hhh.`n123iii" },
-                @{ params = "-Length 98 -String 'The Wrap-String function breaks a string into multiple lines, ensuring each line does not exceed the specified length.' -WordDelimiter '(.) '"
-                   expected = "The Wrap-String function breaks a string into multiple lines, ensuring each line does not exceed`nthe specified length." },
-                @{ params = "-String 'Mr Wright-Rong has a double-barrelled name.' -Length 12"
-                   expected = "Mr Wright-`nRong has a`ndouble-`nbarrelled`nname." },
-                @{ params = "-String '. a.bb cc.ddd eee.ffff gggg.hhh iii.jj kk.l . ' -Length 8 -WordDelimiter '`.'"
-                   expected = ". a`nbb cc`nddd eee`nffff gggg`nhhh iii`njj kk`nl . " }
-            ) | ForEach-Object {
-                $test_number++
-                $params = $_.params
-                $expected = $_.expected
-                Write-Host "Test ${test_number}:`nWrap-String $params"
-                $expected_formatted = [regex]::Replace($expected, '(?m)(^|$)', '~')
-                $actual = Invoke-Expression "Wrap-String $params"
-                $success = ($actual -eq $expected)
-                Write-Host "Expected result:`n$expected_formatted"
-                if ($success) {
-                    Write-Host -ForegroundColor Green 'PASS'
-                } else {
-                    Write-Host -ForegroundColor Red 'FAIL'
-                    $actual_formatted = [regex]::Replace($actual, '(?m)(^|$)', '~')
-                    Write-Host "Actual result:`n$actual_formatted"
-                }
-                Write-Host ""
-            }
+            Write-Host "To run tests, please use the Pester test script: Wrap-String.Tests.ps1"
             return
         }
     }
 
     process {
+        if (-not $String) { return "" }
+
         $tokens = @()
-        $inputStr = $String
-        $pattern = $WordDelimiter
         $lastIndex = 0
-        $matches = [regex]::Matches($inputStr, $pattern)
-        foreach ($match in $matches) {
-            $start = $match.Index
-            $length = $match.Length
-            $fragment = $inputStr.Substring($lastIndex, $start - $lastIndex)
-            if ($fragment -ne "") { $tokens += $fragment }
-            # Only add capture group if present and successful
-            if ($match.Groups.Count -gt 1 -and $match.Groups[1].Success) {
-                $tokens += $match.Groups[1].Value
+        $matches = [regex]::Matches($String, $WordDelimiter)
+
+        Write-Debug "Tokenizing input using pattern: $WordDelimiter"
+        foreach ($m in $matches) {
+            if ($m.Index -gt $lastIndex) {
+                $segment = $String.Substring($lastIndex, $m.Index - $lastIndex)
+                $tokens += $segment
+                Write-Debug "Segment added: '$segment'"
             }
-            $lastIndex = $start + $length
+            if ($m.Groups.Count -gt 1 -and $m.Groups[1].Success) {
+                $capture = $m.Groups[1].Value
+                $tokens += $capture
+                Write-Debug "Capture group added: '$capture'"
+            } elseif ($m.Value -match '^\s+$') {
+                $tokens += ' '
+                Write-Debug "Whitespace collapsed to single space"
+            }
+            $lastIndex = $m.Index + $m.Length
         }
-        # Add trailing fragment
-        if ($lastIndex -lt $inputStr.Length) {
-            $tokens += $inputStr.Substring($lastIndex)
+        if ($lastIndex -lt $String.Length) {
+            $remainder = $String.Substring($lastIndex)
+            $tokens += $remainder
+            Write-Debug "Remainder added: '$remainder'"
         }
 
-        # Re-join tokens where splitting would break a word (for whitespace delimiters)
-        # Instead, split into "words" and build up lines
         $lines = @()
         $line = ""
         foreach ($token in $tokens) {
-            if ($line -eq "") {
-                $line = $token
-            }
-            elseif (($line.Length + 1 + $token.Length) -le $Length) {
-                # Add with a space or delimiter if necessary
-                if ($line[-1] -match '[^\s\.\-]$' -and $token -notmatch '^[\.\-\s]') {
-                    $line += " " + $token
-                } else {
-                    $line += $token
+            if ($line.Length + $token.Length -le $Length) {
+                $line += $token
+                Write-Verbose "Appending token: '$token' => Line: '$line'"
+            } else {
+                if ($line -ne "") {
+                    $lines += $line
+                    Write-Verbose "Line full: '$line'"
                 }
-            }
-            else {
-                $lines += $line
+                while ($token.Length -gt $Length) {
+                    $split = $token.Substring(0, $Length)
+                    $lines += $split
+                    Write-Verbose "Splitting long token: '$split'"
+                    $token = $token.Substring($Length)
+                }
                 $line = $token
+                Write-Verbose "Starting new line with token: '$line'"
             }
         }
         if ($line -ne "") {
             $lines += $line
+            Write-Verbose "Final line: '$line'"
         }
-        $result_str = ($lines -join $LineSeparator)
-        return $result_str
+
+        return ($lines -join $LineSeparator)
     }
 }
