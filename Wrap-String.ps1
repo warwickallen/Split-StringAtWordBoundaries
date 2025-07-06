@@ -96,7 +96,7 @@ function Wrap-String {
             Write-Host "Running Wrap-String test cases..."
             Write-Host ""
 
-            $test_number = 0წ
+            $test_number = 0
 
             (
                 @{ params = "-String 'aaa.bbb...ccc.ddd.eee.fff' -Length 12 -WordDelimiter '(`.)`.*'"
@@ -117,7 +117,6 @@ function Wrap-String {
                 $expected = $_.expected
                 Write-Host "Test ${test_number}:`nWrap-String $params"
                 $expected_formatted = [regex]::Replace($expected, '(?m)(^|$)', '~')
-                Write-Host )]
                 $actual = Invoke-Expression "Wrap-String $params"
                 $success = ($actual -eq $expected)
                 Write-Host "Expected result:`n$expected_formatted"
