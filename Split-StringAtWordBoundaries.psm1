@@ -117,7 +117,18 @@ function Split-StringAtWordBoundaries {
         }
         if ($Test) {
             Invoke-Command $getVersion | Write-Output
-            Write-Host "To run tests, please use the Pester test script: Split-StringAtWordBoundaries.Tests.ps1"
+            $testScript = Join-Path $PSScriptRoot 'Split-StringAtWordBoundaries.Tests.ps1'
+            Write-Debug "Test script: $testScript"
+            try {
+                Invoke-Pester $testScript
+            } catch {
+                (
+                    "Pester tests could not be run.",
+                    "Ensure Pester is installed and the test script is available.",
+                    "To run tests, please use the Pester test script: $testScript",
+                    $_
+                ) -join "`n" | Write-Error
+            }
             return
         }
     }
