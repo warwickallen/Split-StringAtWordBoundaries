@@ -97,10 +97,18 @@ function Split-StringAtWordBoundaries {
     )
 
     begin {
-        $Version = (Get-Content $0 | Select-String 'Version:')
+        $moduleName = 'Split-StringAtWordBoundaries'
+        $getVersion = {
+            # Retrieve the module's version from the manifest
+            $module = Get-Module -Name $moduleName -ErrorAction SilentlyContinue
+            "$moduleName Version $(if ($module) {
+                $module.Version
+            } else {
+                "Unknown (Module not loaded)"
+            })"
+        }
         if ($ShowVersion) {
-            #Import-LocalizedData
-            Write-Output "Split-StringAtWordBoundaries Version: $Version"
+            Invoke-Command $getVersion | Write-Output
             return
         }
         if ($Help) {
@@ -108,7 +116,7 @@ function Split-StringAtWordBoundaries {
             return
         }
         if ($Test) {
-            Write-Host "Split-StringAtWordBoundaries Version: $Version"
+            Invoke-Command $getVersion | Write-Output
             Write-Host "To run tests, please use the Pester test script: Split-StringAtWordBoundaries.Tests.ps1"
             return
         }
