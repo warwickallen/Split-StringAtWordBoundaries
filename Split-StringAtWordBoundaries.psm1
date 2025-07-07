@@ -3,7 +3,7 @@
     Wraps a string to a specified maximum length per line, splitting only at designated delimiters.
 
 .DESCRIPTION
-    The Wrap-String function breaks a string into multiple lines, ensuring each line does not exceed the specified length.
+    The Split-StringAtWordBoundaries function breaks a string into multiple lines, ensuring each line does not exceed the specified length.
     It splits the input string at points matching the provided WordDelimiter regular expression, preserving the first capture group (if present) at the split points.
     Lines are joined using the specified LineSeparator, and the function ensures that no line exceeds the specified length (unless that line consists of a single word that is longer than the specified length).
     These parts are counted towards the line length:
@@ -50,14 +50,14 @@
     Alias: Version
 
 .EXAMPLE
-    Wrap-String -String "aaa.bbb...ccc.ddd.eee.fff" -Length 12 -WordDelimiter '(\.)\.*'
+    Split-StringAtWordBoundaries -String "aaa.bbb...ccc.ddd.eee.fff" -Length 12 -WordDelimiter '(\.)\.*'
     Output:
     aaa.bbb.
     ccc.ddd.eee.
     fff
 
 .EXAMPLE
-    Wrap-String -String "This is a long sentence to wrap." -Length 10
+    Split-StringAtWordBoundaries -String "This is a long sentence to wrap." -Length 10
     Output:
     This is a
     long
@@ -67,7 +67,7 @@
 .NOTES
     Version: 0.0.1.27
 #>
-function Wrap-String {
+function Split-StringAtWordBoundaries {
     [CmdletBinding()]
     param (
         [Parameter(ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
@@ -100,16 +100,16 @@ function Wrap-String {
         $Version = (Get-Content $0 | Select-String 'Version:')
         if ($ShowVersion) {
             #Import-LocalizedData
-            Write-Output "Wrap-String Version: $Version"
+            Write-Output "Split-StringAtWordBoundaries Version: $Version"
             return
         }
         if ($Help) {
-            Get-Help -Name Wrap-String -Full
+            Get-Help -Name Split-StringAtWordBoundaries -Full
             return
         }
         if ($Test) {
-            Write-Host "Wrap-String Version: $Version"
-            Write-Host "To run tests, please use the Pester test script: Wrap-String.Tests.ps1"
+            Write-Host "Split-StringAtWordBoundaries Version: $Version"
+            Write-Host "To run tests, please use the Pester test script: Split-StringAtWordBoundaries.Tests.ps1"
             return
         }
     }
@@ -170,4 +170,4 @@ function Wrap-String {
         return ($lines -join $LineSeparator)
     }
 }
-Export-ModuleMember -Function Wrap-String
+Export-ModuleMember -Function Split-StringAtWordBoundaries
