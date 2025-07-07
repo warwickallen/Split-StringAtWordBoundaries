@@ -65,7 +65,7 @@
     to wrap.
 
 .NOTES
-    Version: 0.0.1.27
+    This module is not ready for release.
 #>
 function Split-StringAtWordBoundaries {
     [CmdletBinding()]
