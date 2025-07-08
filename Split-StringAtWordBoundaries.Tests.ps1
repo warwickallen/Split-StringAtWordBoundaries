@@ -55,4 +55,10 @@ Describe 'Split-StringAtWordBoundaries' {
         Split-StringAtWordBoundaries -Length 16 -LinePrefix '  ~' -LineSuffix '~' |
         Should -Be "  ~The quick~`n  ~brown fox~`n  ~jumps over~`n  ~the lazy dog."
     }
+
+    It 'Wraps string using two capture groups with a look-ahead' {
+        'The stupendously fast and atsonishingly agile brown fox continuously jumps over the remarkably lazy, and rather fat, dog.' |
+        Split-StringAtWordBoundaries -Length 12 -WordDelimiter '()' -LinePrefix '  ~' -LineSuffix '~' |
+        Should -Be "The stupendously fast and atsonishingly agile brown fox continuously jumps over the remarkably lazy, and rather fat, dog."
+    }
 }
