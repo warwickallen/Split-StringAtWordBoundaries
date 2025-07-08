@@ -53,12 +53,12 @@ Describe 'Split-StringAtWordBoundaries' {
     It 'Wraps string using a line prefix and a line suffix' {
         'The quick brown fox jumps over the lazy dog.' |
         Split-StringAtWordBoundaries -Length 16 -LinePrefix '  ~' -LineSuffix '~' |
-        Should -Be "  ~The quick~`n  ~brown fox~`n  ~jumps over~`n  ~the lazy dog."
+        Should -Be "  ~The quick~`n  ~brown fox~`n  ~jumps over~`n  ~the lazy dog.~"
     }
 
     It 'Wraps string using two capture groups with a look-ahead' {
-        'The stupendously fast and atsonishingly agile brown fox continuously jumps over the remarkably lazy, and rather fat, dog.' |
-        Split-StringAtWordBoundaries -Length 12 -WordDelimiter '()' -LinePrefix '  ~' -LineSuffix '~' |
-        Should -Be "The stupendously fast and atsonishingly agile brown fox continuously jumps over the remarkably lazy, and rather fat, dog."
+        'The stupendously speedy, astonishingly agile and tremendously tireless brown fox continuously jumps over the remarkably lazy, and rather fat, dog.' |
+        Split-StringAtWordBoundaries -Length 16 -WordDelimiter '(\S). .(\S)' -LinePrefix '<(\2)~' -LineSuffix '~(\1)>' |
+        Should -Be "<~T~h>`n<t~upendous~l>`n<p~eed~y>`n<s~tonishing~l>`n<g~ile a~n>`n<r~emendous~l>`n<i~reless bro~w>`n<o~~>`n<o~ntinuous~l>`n<u~mps over t~h>`n<e~markably laz~y>`n<n~d rather fa~t>`n<o~g.~>"
     }
 }
